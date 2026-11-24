@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Attendance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800">
+  <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-wide text-blue-600">School Portal</p>
+        <h1 class="text-2xl font-bold text-slate-900 sm:text-3xl">Attendance Management</h1>
+      </div>
+      <button id="openAddModal" type="button" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+        + Add Student
+      </button>
+    </header>
+    <section class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Attendance summary">
+      <article class="rounded-xl border border-blue-100 bg-white p-4 shadow-sm">
+        <p class="text-sm font-medium text-slate-500">Total Students</p>
+        <p id="totalCount" class="mt-2 text-3xl font-bold text-blue-700">0</p>
+      </article>
+      <article class="rounded-xl border border-emerald-100 bg-white p-4 shadow-sm">
+        <p class="text-sm font-medium text-slate-500">Present Today</p>
+        <p id="presentCount" class="mt-2 text-3xl font-bold text-emerald-600">0</p>
+      </article>
+      <article class="rounded-xl border border-red-100 bg-white p-4 shadow-sm">
+        <p class="text-sm font-medium text-slate-500">Absent Today</p>
+        <p id="absentCount" class="mt-2 text-3xl font-bold text-red-600">0</p>
+      </article>
+      <article class="rounded-xl border border-amber-100 bg-white p-4 shadow-sm">
+        <p class="text-sm font-medium text-slate-500">Late</p>
+        <p id="lateCount" class="mt-2 text-3xl font-bold text-amber-500">0</p>
+      </article>
+    </section>
+    <section class="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div class="grid gap-3 md:grid-cols-12 md:items-end">
+        <label class="md:col-span-3">
+          <span class="mb-1.5 block text-sm font-medium text-slate-700">Class</span>
+          <select id="classFilter" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+            <option value="Grade 9A">Grade 9A</option>
+            <option value="Grade 10B">Grade 10B</option>
+            <option value="Grade 11A">Grade 11A</option>
+          </select>
+        </label>
+        <label class="md:col-span-2">
+          <span class="mb-1.5 block text-sm font-medium text-slate-700">Date</span>
+          <input id="dateFilter" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+        </label>
+        <label class="md:col-span-4">
+          <span class="mb-1.5 block text-sm font-medium text-slate-700">Search Student</span>
+          <input id="searchInput" type="search" placeholder="Search by name..." class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+        </label>
+        <div class="grid grid-cols-2 gap-2 md:col-span-3">
+          <button id="markAllPresent" type="button" class="rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+            Mark All Present
+          </button>
+          <button id="exportCsv" type="button" class="rounded-lg border border-blue-600 px-3 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            Export CSV
+          </button>
+        </div>
+      </div>
+    </section>
+    <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[760px] text-left">
+          <thead class="border-b border-slate-200 bg-slate-50">
+            <tr>
+              <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Student ID</th>
+              <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Full Name</th>
+              <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
+              <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Notes</th>
+              <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Action</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="hidden px-6 py-12 text-center text-sm text-slate-500">No students found for this class.</div>
+    </section>
+    <button id="saveButton" type="button" class="mt-4 w-full rounded-lg bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto">
+      Save Attendance
+    </button>
+  </main>
+  <div id="addModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+      <div class="mb-5 flex items-center justify-between">
+        <h2 id="addModalTitle" class="text-lg font-bold text-slate-900">Add New Student</h2>
+        <button id="closeAddModal" type="button" class="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Close">&times;</button>
+      </div>
+      <form id="addStudentForm" class="space-y-4">
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium text-slate-700">Full Name</span>
+          <input id="newStudentName" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+        </label>
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium text-slate-700">Student ID</span>
+          <input id="newStudentId" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+        </label>
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium text-slate-700">Class</span>
+          <select id="newStudentClass" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+            <option value="Grade 9A">Grade 9A</option>
+            <option value="Grade 10B">Grade 10B</option>
+            <option value="Grade 11A">Grade 11A</option>
+          </select>
+        </label>
+        <div class="flex justify-end gap-2 pt-2">
+          <button id="cancelAddStudent" type="button" class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+          <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Add Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div id="toast" class="fixed bottom-5 left-1/2 z-[60] hidden -translate-x-1/2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-lg"></div>
+  <script>
+    const STORAGE_KEY = "schoolAttendanceApp";
+    const classes = ["Grade 9A", "Grade 10B", "Grade 11A"];
+    const sampleStudents = [
+      { id: "S1001", name: "Emily Carter", className: "Grade 9A" },
+      { id: "S1002", name: "Noah Williams", className: "Grade 9A" },
+      { id: "S1003", name: "Olivia Martinez", className: "Grade 9A" },
+      { id: "S1004", name: "Liam Thompson", className: "Grade 10B" },
+      { id: "S1005", name: "Sophia Anderson", className: "Grade 10B" },
+      { id: "S1006", name: "Ethan Walker", className: "Grade 10B" },
+      { id: "S1007", name: "Ava Robinson", className: "Grade 10B" },
+      { id: "S1008", name: "Lucas Garcia", className: "Grade 11A" },
+      { id: "S1009", name: "Mia Hernandez", className: "Grade 11A" },
+      { id: "S1010", name: "James Wilson", className: "Grade 11A" }
+    ];
+    let appData = loadData();
+    const classFilter = document.getElementId("classFilter");
+    const dateFilter = document.getElementId("dateFilter");
+    const searchInput = document.getElementId("searchInput");
+    const tableBody = document.getElementId("attendanceTableBody");
+    const emptyState = document.getElementId("emptyState");
+    const addModal = document.getElementId("addModal");
+    const addStudentForm = document.getElementId("addStudentForm");
+    const today = new Date();
+    const localToday = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0")
+    ].join("-");
+    dateFilter.value = localToday;
+    function loadData() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (saved && Array.isArray(saved.students)) {
+          return {
+            students: saved.students,
+            attendance: saved.attendance || {}
+          };
+        }
+      } catch (error) {
+        console.warn("Saved attendance data could not be loaded.", error);
+      }
+      return { students: sampleStudents, attendance: {} };
+    }
+    function saveData(showConfirmation = false) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+      if (showConfirmation) showToast("Attendance saved successfully");
+    }
+    function getAttendanceKey(studentId) {
+      return `${dateFilter.value}|${studentId}`;
+    }
+    function getAttendance(studentId) {
+      return appData.attendance[getAttendanceKey(studentId)] || { status: "", notes: "" };
+    }
+    function setAttendance(studentId, field, value) {
+      const key = getAttendanceKey(studentId);
+      if (!appData.attendance[key]) appData.attendance[key] = { status: "", notes: "" };
+      appData.attendance[key][field] = value;
+      updateSummary();
+      saveData(false);
+    }
+    function filteredStudents() {
+      const selectedClass = classFilter.value;
+      const query = searchInput.value.trim().toLowerCase();
+      return appData.students.filter(student =>
+        student.className === selectedClass &&
+        student.name.toLowerCase().includes(query)
+      );
+    }
+    function renderTable() {
+      const students = filteredStudents();
+      tableBody.innerHTML = "";
+      emptyState.classList.toggle("hidden", students.length > 0);
+      students.forEach(student => {
+        const record = getAttendance(student.id);
+        const row = document.createElement("tr");
+        row.className = "hover:bg-slate-50";
+        row.innerHTML = `
+          <td class="whitespace-nowrap px-4 py-3 text-sm font-semibold text-slate-600">${escapeHtml(student.id)}</td>
+          <td class="whitespace-nowrap px-4 py-3 text-sm font-semibold text-slate-900">${escapeHtml(student.name)}</td>
+          <td class="px-4 py-3">
+            <div class="flex gap-1.5" role="group" aria-label="Status for ${escapeHtml(student.name)}">
+              ${statusButton(student.id, "present", "Present", record.status)}
+              ${statusButton(student.id, "absent", "Absent", record.status)}
+              ${statusButton(student.id, "late", "Late", record.status)}
+            </div>
+          </td>
+          <td class="px-4 py-3">
+            <input type="text" value="${escapeHtml(record.notes)}" data-note-id="${escapeHtml(student.id)}" placeholder="Add note..." class="w-full min-w-[180px] rounded-md border border-slate-300 px-2.5 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+          </td>
+          <td class="px-4 py-3">
+            <button type="button" data-delete-id="${escapeHtml(student.id)}" class="rounded-md px-2.5 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50" aria-label="Delete ${escapeHtml(student.name)}">Delete</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+      tableBody.querySelectorAll("[data-status-id]").forEach(button => {
+        button.addEventListener("click", () => {
+          setAttendance(button.dataset.statusId, "status", button.dataset.statusValue);
+          renderTable();
+        });
+      });
+      tableBody.querySelectorAll("[data-note-id]").forEach(input => {
+        input.addEventListener("input", () => {
+          setAttendance(input.dataset.noteId, "notes", input.value);
+        });
+      });
+      tableBody.querySelectorAll("[data-delete-id]").forEach(button => {
+        button.addEventListener("click", () => deleteStudent(button.dataset.deleteId));
+      });
+      updateSummary();
+    }
+    function statusButton(studentId, status, label, currentStatus) {
+      const styles = {
+        present: "border-emerald-200 text-emerald-700 hover:bg-emerald-50",
+        absent: "border-red-200 text-red-700 hover:bg-red-50",
+        late: "border-amber-200 text-amber-700 hover:bg-amber-50"
+      };
+      const activeStyles = {
+        present: "border-emerald-600 bg-emerald-600 text-white",
+        absent: "border-red-600 bg-red-600 text-white",
+        late: "border-amber-500 bg-amber-500 text-white"
+      };
+      const isActive = currentStatus === status;
+      return `<button type="button" data-status-id="${escapeHtml(studentId)}" data-status-value="${status}" class="rounded-md border px-2.5 py-2 text-xs font-bold transition ${isActive ? activeStyles[status] : styles[status]}">${label}</button>`;
+    }
+    function updateSummary() {
+      const students = appData.students.filter(student => student.className === classFilter.value);
+      let present = 0;
+      let absent = 0;
+      let late = 0;
+      students.forEach(student => {
+        const status = getAttendance(student.id).status;
+        if (status === "present") present++;
+        if (status === "absent") absent++;
+        if (status === "late") late++;
+      });
+      document.getElementById("totalCount").textContent = students.length;
+      document.getElementById("presentCount").textContent = present;
+      document.getElementById("absentCount").textContent = absent;
+      document.getElementById("lateCount").textContent = late;
+    }
+    function markAllPresent() {
+      const students = filteredStudents();
+      students.forEach(student => {
+        const key = getAttendanceKey(student.id);
+        if (!appData.attendance[key]) appData.attendance[key] = { status: "", notes: "" };
+        appData.attendance[key].status = "present";
+      });
+      saveData(false);
+      renderTable();
+    }
+    function deleteStudent(studentId) {
+      const student = appData.students.find(item => item.id === studentId);
+      if (!student) return;
+      if (!confirm(`Delete ${student.name}?`)) return;
+      appData.students = appData.students.filter(item => item.id !== studentId);
+      Object.keys(appData.attendance).forEach(key => {
+        if (key.endsWith(`|${studentId}`)) delete appData.attendance[key];
+      });
+      saveData(false);
+      renderTable();
+      showToast("Student deleted");
+    }
+    function openModal() {
+      addModal.classList.remove("hidden");
+      addModal.classList.add("flex");
+      document.getElementById("newStudentName").focus();
+    }
+    function closeModal() {
+      addModal.classList.add("hidden");
+      addModal.classList.remove("flex");
+      addStudentForm.reset();
+      document.getElementById("newStudentClass").value = classFilter.value;
+    }
+    function addStudent(event) {
+      event.preventDefault();
+      const name = document.getElementById("newStudentName").value.trim();
+      const id = document.getElementById("newStudentId").value.trim();
+      const studentClass = document.getElementById("newStudentClass").value;
+      if (!name || !id) return;
+      if (appData.students.some(student => student.id.toLowerCase() === id.toLowerCase())) {
+        showToast("A student with this ID already exists");
+        return;
+      }
+      appData.students.push({ id, name, className: studentClass });
+      saveData(false);
+      closeModal();
+      classFilter.value = studentClass;
+      renderTable();
+      showToast("Student added");
+    }
+    function exportCsv() {
+      const students = filteredStudents();
+      const rows = [["Date", "Class", "Student ID", "Full Name", "Status", "Notes"]];
+      students.forEach(student => {
+        const record = getAttendance(student.id);
+        rows.push([
+          dateFilter.value,
+          student.className,
+          student.id,
+          student.name,
+          record.status || "not marked",
+          record.notes || ""
+        ]);
+      });
+      const csv = rows.map(row =>
+        row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(",")
+      ).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `attendance-${classFilter.value.replace(/\s+/g, "-")}-${dateFilter.value}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.remove("hidden");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.add("hidden"), 2200);
+    }
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    classFilter.addEventListener("change", renderTable);
+    dateFilter.addEventListener("change", renderTable);
+    searchInput.addEventListener("input", renderTable);
+    document.getElementById("markAllPresent").addEventListener("click", markAllPresent);
+    document.getElementById("exportCsv").addEventListener("click", exportCsv);
+    document.getElementById("saveButton").addEventListener("click", () => saveData(true));
+    document.getElementById("openAddModal").addEventListener("click", openModal);
+    document.getElementById("closeAddModal").addEventListener("click", closeModal);
+    document.getElementById("cancelAddStudent").addEventListener("click", closeModal);
+    addStudentForm.addEventListener("submit", addStudent);
+    addModal.addEventListener("click", event => {
+      if (event.target === addModal) closeModal();
+    });
+    document.getElementById("newStudentClass").value = classFilter.value;
+    saveData(false);
+    renderTable();
+  </script>
+</body>
+</html>
